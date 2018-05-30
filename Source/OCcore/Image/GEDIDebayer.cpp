@@ -2,14 +2,14 @@
 // Project: OpenCine / OCcore
 // License: GNU GPL Version 3 (https://www.gnu.org/licenses/gpl-3.0.en.html)
 
-#include "BilinearDebayer.h"
+#include "GEDIDebayer.h"
 
 // TODO: Add multi-threading.
 #include <thread>
 
 #include <Log/Logger.h>
 
-BilinearDebayer::BilinearDebayer(OCImage &image)
+GEDIDebayer::GEDIDebayer(OCImage &image)
 {
     _width = image.Width();
     _height = image.Height();
@@ -25,11 +25,11 @@ BilinearDebayer::BilinearDebayer(OCImage &image)
     OC_LOG_INFO("\nConsidering width as " + std::to_string(_width) + ":\n" + std::to_string(_patternOffsets[0]) + "\n" + std::to_string(_patternOffsets[1]) + "\n" + std::to_string(_patternOffsets[2]) + "\n" + std::to_string(_patternOffsets[3]) + "\n");
 }
 
-BilinearDebayer::~BilinearDebayer()
+GEDIDebayer::~GEDIDebayer()
 {
 }
 
-void BilinearDebayer::DebayerBottomRight(uint16_t *channel)
+void GEDIDebayer::DebayerBottomRight(uint16_t *channel)
 {
     for(int index = _patternOffsets[0]; index < _size; index += 2)
     {
@@ -41,7 +41,7 @@ void BilinearDebayer::DebayerBottomRight(uint16_t *channel)
     }
 }
 
-void BilinearDebayer::DebayerBottomLeft(uint16_t *channel)
+void GEDIDebayer::DebayerBottomLeft(uint16_t *channel)
 {
     for(int index = _patternOffsets[0]; index < _size; index += 2)
     {
@@ -53,23 +53,42 @@ void BilinearDebayer::DebayerBottomLeft(uint16_t *channel)
     }
 }
 
-void BilinearDebayer::DebayerGreen()
+void GEDIDebayer::DebayerGreen()
 {
+    int hGrad, hValue, vValue, vGrad;
     for(int index = _patternOffsets[1]; index < _size; index += 2)
     {
-        _greenChannel[index] = ( _greenChannel[index - _width] + _greenChannel[index - 1] + _greenChannel[index + 1] + _greenChannel[index + _width] ) >> 2;
+        hValue = (_greenChannel[index - 1] + _greenChannel[index + 1]) >> 1;
+        hGrad = std::abs(_greenChannel[index - 1] - hValue) + std::abs(_greenChannel[index + 1] - hValue);
+        vValue = (_greenChannel[index - _width] + _greenChannel[index + _width]) >> 1;
+        vGrad = std::abs(_greenChannel[index - _width] - vValue) + std::abs(_greenChannel[index + _width] - vValue);
+
+        if (hGrad <= vGrad)
+            _greenChannel[index] = hValue;
+        else
+            _greenChannel[index] = vValue;
+
         if ((index + 3) % _width <= 1)
             index += _width + 2;
     }
     for(int index = _patternOffsets[2]; index < _size; index += 2)
     {
-         _greenChannel[index] = ( _greenChannel[index - _width] + _greenChannel[index - 1] + _greenChannel[index + 1] + _greenChannel[index + _width] ) >> 2;
+        hValue = (_greenChannel[index - 1] + _greenChannel[index + 1]) >> 1;
+        hGrad = std::abs(_greenChannel[index - 1] - hValue) + std::abs(_greenChannel[index + 1] - hValue);
+        vValue = (_greenChannel[index - _width] + _greenChannel[index + _width]) >> 1;
+        vGrad = std::abs(_greenChannel[index - _width] - vValue) + std::abs(_greenChannel[index + _width] - vValue);
+
+        if (hGrad <= vGrad)
+            _greenChannel[index] = hValue;
+        else
+            _greenChannel[index] = vValue;
+
         if ((index + 3) % _width <= 1)
             index += _width + 2;
     }
 }
 
-void BilinearDebayer::DebayerTopLeft(uint16_t *channel)
+void GEDIDebayer::DebayerTopLeft(uint16_t *channel)
 {
     for(int index = _patternOffsets[3]; index < _size; index += 2)
     {
@@ -81,7 +100,7 @@ void BilinearDebayer::DebayerTopLeft(uint16_t *channel)
     }
 }
 
-void BilinearDebayer::DebayerTopRight(uint16_t *channel)
+void GEDIDebayer::DebayerTopRight(uint16_t *channel)
 {
     for(int index = _patternOffsets[3]; index < _size; index += 2)
     {
@@ -93,7 +112,7 @@ void BilinearDebayer::DebayerTopRight(uint16_t *channel)
     }
 }
 
-void BilinearDebayer::DemosaicBorders(uint16_t *channel)
+void GEDIDebayer::DemosaicBorders(uint16_t *channel)
 {
     int size = _size - _width;
     for(int index = 0; index < _width; index += 2)
@@ -112,77 +131,35 @@ void BilinearDebayer::DemosaicBorders(uint16_t *channel)
     }
 }
 
-void BilinearDebayer::Process()
+void GEDIDebayer::Process()
 {
     switch (_pattern) {
     case BayerPattern::RGGB:
-        BilinearDebayer::DebayerBottomRight(_redChannel);
-        BilinearDebayer::DebayerTopLeft(_blueChannel);
+        GEDIDebayer::DebayerBottomRight(_redChannel);
+        GEDIDebayer::DebayerTopLeft(_blueChannel);
         break;
     case BayerPattern::BGGR:
-        BilinearDebayer::DebayerBottomRight(_blueChannel);
-        BilinearDebayer::DebayerTopLeft(_redChannel);
+        GEDIDebayer::DebayerBottomRight(_blueChannel);
+        GEDIDebayer::DebayerTopLeft(_redChannel);
         break;
     case BayerPattern::GRBG:
-        BilinearDebayer::DebayerBottomLeft(_redChannel);
-        BilinearDebayer::DebayerTopRight(_blueChannel);
+        GEDIDebayer::DebayerBottomLeft(_redChannel);
+        GEDIDebayer::DebayerTopRight(_blueChannel);
         break;
     case BayerPattern::GBRG:
-        BilinearDebayer::DebayerBottomLeft(_blueChannel);
-        BilinearDebayer::DebayerTopRight(_redChannel);
+        GEDIDebayer::DebayerBottomLeft(_blueChannel);
+        GEDIDebayer::DebayerTopRight(_redChannel);
         break;
     default:
         break;
     }
-    BilinearDebayer::DebayerGreen();
-    BilinearDebayer::DemosaicBorders(_blueChannel);
-    BilinearDebayer::DemosaicBorders(_greenChannel);
-    BilinearDebayer::DemosaicBorders(_redChannel);
+    GEDIDebayer::DebayerGreen();
+    GEDIDebayer::DemosaicBorders(_blueChannel);
+    GEDIDebayer::DemosaicBorders(_greenChannel);
+    GEDIDebayer::DemosaicBorders(_redChannel);
 }
 
-void BilinearDebayer::DebayerNearest(int red, int green0, int green1, int blue)
-{
-    for(int index = 0; index < _size; index += 2)
-    {
-        _redChannel[index + green0] = _redChannel[index + red];
-        _redChannel[index + green1] = _redChannel[index + red];
-        _redChannel[index + blue]   = _redChannel[index + red];
-
-        _greenChannel[index + red]  = _greenChannel[index + green0];
-        _greenChannel[index + blue] = _greenChannel[index + green1];
-
-        _blueChannel[index + red]    = _blueChannel[index + blue];
-        _blueChannel[index + green0] = _blueChannel[index + blue];
-        _blueChannel[index + green1] = _blueChannel[index + blue];
-
-        if ( ((index + 2) % _width) == 0 ) {
-            index += _width;
-        }
-    }
-}
-
-void BilinearDebayer::ProcessNearest()
-{
-    // Nearest Interpolation Processor.
-    switch (_pattern) {
-    case BayerPattern::RGGB:
-        DebayerNearest(0, 1, _width, _width + 1);
-        break;
-    case BayerPattern::BGGR:
-        DebayerNearest(_width + 1, 1, _width, 0);
-        break;
-    case BayerPattern::GRBG:
-        DebayerNearest(1, 0, _width + 1, _width);
-        break;
-    case BayerPattern::GBRG:
-        DebayerNearest(_width, 0, _width + 1, 1);
-        break;
-    default:
-        break;
-    }
-}
-
-void BilinearDebayer::SetPatternOffsets(BayerPattern pattern)
+void GEDIDebayer::SetPatternOffsets(BayerPattern pattern)
 {
     switch (pattern) {
     case BayerPattern::RGGB:
