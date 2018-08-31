@@ -168,7 +168,7 @@ void ProcessingPresenter::OpenRAWFile()
 {
     _view->EnableRendering(false);
 
-    QString fileName = QFileDialog::getOpenFileName(_view, tr("Open Image"), _lastDir, tr("Image Files (*.dng *.DNG *.cr2 *.CR2)"));
+    QString fileName = QFileDialog::getOpenFileName(_view, tr("Open Image"), _lastDir, tr("Image Files (*)"));
     _currentFilePath = fileName.toStdString();
     _lastDir = QFileInfo(fileName).path();
 
