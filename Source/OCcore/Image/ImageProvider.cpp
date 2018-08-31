@@ -9,16 +9,16 @@
 
 #include "Log/Logger.h"
 
-#include "TIFFLoader.h"
+#include "RAWLoader.h"
 #include "MLVLoader.h"
 
 using namespace OC::DataProvider;
 
 ImageProvider::ImageProvider()
 {
-    std::shared_ptr<TIFFLoader> tiffLoader = std::make_shared<TIFFLoader>();
-    _imageProviders.insert(std::make_pair(FileFormat::TIFF, tiffLoader));
-    _imageProviders.insert(std::make_pair(FileFormat::DNG, tiffLoader));
+    std::shared_ptr<RAWLoader> rawLoader = std::make_shared<RAWLoader>();
+    _imageProviders.insert(std::make_pair(FileFormat::TIFF, rawLoader));
+    _imageProviders.insert(std::make_pair(FileFormat::DNG, rawLoader));
     _imageProviders.insert(std::make_pair(FileFormat::MLV, std::make_shared<MLVLoader>()));
 }
 
