@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#include <CL/cl.hpp>
+#include <CL/cl2.hpp>
 //#include "OCImage.h"
 
 #include "IProcessorOCL.h"

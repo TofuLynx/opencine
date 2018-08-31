@@ -2,7 +2,7 @@
 #define IPROCESSOROCL_H
 
 #include "OCImage.h"
-#include <CL/cl.hpp>
+#include <CL/cl2.hpp>
 #include <string>
 
 using namespace OC::DataProvider;
